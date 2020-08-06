@@ -1,7 +1,8 @@
 package main
 
 import (
-	"./gameRoom"
+	"./controller"
+	"./hub"
 	"github.com/gorilla/mux"
 	"log"
 	"math/rand"
@@ -16,18 +17,17 @@ func main() {
 	//grs := gameRoom.NewGameRoom()
 	//grs.Create("Aksel")
 
-	gameRoom.InitGameRooms()
+	hub.InitHubs()
 
 	log.Println("starting up server")
 	log.Fatal(server())
 }
 
-func server() error{
+func server() error {
 	r := mux.NewRouter()
 
-	r.HandleFunc("/join", gameRoom.JoinHandler).Methods("POST")
+	r.HandleFunc("/join/{hub}/{player}", controller.JoinRoomHandler)
+	r.HandleFunc("/create", controller.CreateHubHandler)
 
-	r.HandleFunc("/create", gameRoom.CreateHandler).Methods("GET")
-
-	return http.ListenAndServe(":8080",r)
+	return http.ListenAndServe(":8080", r)
 }

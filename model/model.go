@@ -1,21 +1,23 @@
 package model
 
-import "golang.org/x/net/websocket"
+import "github.com/gorilla/websocket"
 
 // NewPlayer is used by both /newGameRoom and /joinGameRoom
 type NewPlayer struct {
-	Name       string `json:"name"`
-	GameRoomID string `json:"game_room_id"`
+	Name  string `json:"name"`
+	HubID string `json:"hubID"`
 }
 
-type NewConnection struct {
-	Name          string
-	addClientChan chan *websocket.Conn
+type PlayerConnection struct {
+	Name string
+	Conn *websocket.Conn
 }
 
 type Message struct {
 	Text string `json:"text"`
 }
+
+
 
 type Answer struct {
 	// Which question number 1-4

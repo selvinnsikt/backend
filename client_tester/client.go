@@ -1,54 +1,46 @@
 package main
 
 import (
-	"../model"
 	"bufio"
-	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
-	"log"
-	"math/rand"
-	"net/http"
-	"os"
-
 	"github.com/gorilla/websocket"
+	"log"
+	"net/url"
+	"os"
 )
 
 type Message struct {
 	Text string `json:"text"`
 }
 
+var gameroomID = flag.String("id", "", "enter a game room ID")
+var playerName = flag.String("player", "", "enter a player name")
+
 func main() {
-
-	c := http.Client{}
-
-	np := model.NewPlayer{
-		Name:       "aksel",
-		GameRoomID: "07608",
+	flag.Parse()
+	if *gameroomID == "" {
+		fmt.Println("game room ID is empty..")
+		return
 	}
-	b, _ := json.Marshal(&np)
+	if *playerName == "" {
+		fmt.Println("player name is empty")
+		return
+	}
 
-	req, err := http.NewRequest("POST", "http://localhost:8080/join", bytes.NewReader(b))
+	u := url.URL{Scheme: "ws", Host: "localhost:8080", Path: "/join/" + *gameroomID + "/" + *playerName}
+	log.Println("trying to dial with url " + u.String())
+
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	res, err := c.Do(req)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// TODO: creating a game room is working. Next is joining a game room.
-	// Do I have to dial or can I figure out a way to upgrade the connection?
-	websocket.DefaultDialer.Dial()
 
 	// receive
 	var m Message
 	go func() {
 		for {
-			err := websocket.JSON.Receive(ws, &m)
+			err := conn.ReadJSON(&m)
 			if err != nil {
 				fmt.Println("Error receiving message: ", err.Error())
 				break
@@ -67,7 +59,7 @@ func main() {
 		m := Message{
 			Text: text,
 		}
-		err = websocket.JSON.Send(ws, m)
+		err := conn.WriteJSON(&m)
 		if err != nil {
 			fmt.Println("Error sending message: ", err.Error())
 			break
