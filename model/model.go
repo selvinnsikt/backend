@@ -14,12 +14,15 @@ type PlayerConnection struct {
 }
 
 type Message struct {
-	Text string `json:"text"`
+	Player string `json:"player,omitempty"` // name of player who sent the message
+	Text   string `json:"text"`
+}
+// Example json-object: {"payloadtype":"AnswerFromPlayer","question":1,"votes":["aksel","alf"]}
+type Payload struct {
+	PayloadType string `json:"payloadtype"`
 }
 
-
-
-type Answer struct {
+type AnswerFromPlayer struct {
 	// Which question number 1-4
 	Question int `json:"question"`
 	// Votes of players choosen on that question

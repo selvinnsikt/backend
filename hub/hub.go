@@ -17,6 +17,8 @@ type GameHub interface {
 	BroadcastMsg(msg string) error
 	// Listen to all messages coming to the hub
 	GetBroadcastChan() chan model.Message
+	// sends a message to the client
+	SendMsgToClient(msg, player string) error
 }
 
 var hubs *Hubs
@@ -38,12 +40,17 @@ type Hubs struct {
 // One GameRoom
 type Hub struct {
 	hubID                  string
-	clientsConn            map[string]*websocket.Conn
+	clientsConn            map[string]Client
 	addClientChan          chan *model.PlayerConnection
 	removeClientChan       chan *model.PlayerConnection
 	broadcastChan          chan model.Message
 	numberClientsConnected int
 	mutex                  *sync.RWMutex
+}
+
+type Client struct {
+	Conn  *websocket.Conn
+	mutex *sync.RWMutex
 }
 
 // NewHub creates a new hub
@@ -57,7 +64,7 @@ func NewHub() (*Hub, string) {
 	// Creating a new hub
 	h := &Hub{
 		hubID:                  hubID,
-		clientsConn:            make(map[string]*websocket.Conn),
+		clientsConn:            make(map[string]Client),
 		addClientChan:          make(chan *model.PlayerConnection),
 		removeClientChan:       make(chan *model.PlayerConnection),
 		broadcastChan:          make(chan model.Message),
@@ -86,46 +93,14 @@ func (h *Hub) removeClient(np *model.PlayerConnection) {
 	delete(h.clientsConn, np.Name)
 	h.numberClientsConnected--
 }
-
-// readMessageFromClient reads incoming messages and sent it to incomingMsgChan
-func (h *Hub) readMessageFromClient(pc *model.PlayerConnection) {
-	for {
-		var m model.Message
-		err := pc.Conn.ReadJSON(&m)
-		if err != nil {
-			log.Println("Error: " + err.Error())
-			h.removeClient(pc)
-			return
-		}
-		h.broadcastChan <- m
-	}
-}
-
-func (h *Hub) GetBroadcastChan() <-chan model.Message {
-	return h.broadcastChan
-}
-func (h *Hub) BroadcastMsg(msg string) {
-	h.mutex.RLock()
-	defer h.mutex.RUnlock()
-	for _, client := range h.clientsConn {
-		client := client
-		go func(c *websocket.Conn) {
-			client.SetWriteDeadline(time.Now().Add(writeWait))
-			err := client.WriteJSON(model.Message{Text: msg}) //{Type: -1, Msg: msg})
-			if err != nil {
-				log.Printf("error occurred while broadcasting message to IP '%s' , errorMsg: %s \n", client.RemoteAddr().String(), err.Error())
-			}
-		}(client)
-
-	}
-}
-
 func (h *Hub) addClient(np *model.PlayerConnection) {
 	// Add client to Game Room
 	log.Printf("adding '%s to hub '%s' with IP '%s' \n", np.Name, h.hubID, np.Conn.RemoteAddr().String())
-	h.clientsConn[np.Name] = np.Conn
+	h.clientsConn[np.Name] = Client{
+		Conn:  np.Conn,
+		mutex: new(sync.RWMutex),
+	}
 	h.numberClientsConnected++
-
 }
 
 // addClientToHub adds the player to the given hub ID
@@ -139,6 +114,68 @@ func (h *Hub) AddClientToHub(pc model.PlayerConnection) {
 	// Read the messages sent from the client
 	go h.readMessageFromClient(&pc)
 
+}
+
+// readMessageFromClient reads incoming messages and sent it to incomingMsgChan
+func (h *Hub) readMessageFromClient(pc *model.PlayerConnection) {
+	for {
+		var m model.Message
+		err := pc.Conn.ReadJSON(&m)
+		if err != nil {
+			log.Println("Error: " + err.Error())
+			h.removeClient(pc)
+			return
+		}
+		// add name of client who sent the message
+		m.Player = pc.Name
+		h.broadcastChan <- m
+	}
+}
+func (h *Hub) SendMsgToClient(msg, player string) {
+	if c, ok := h.clientsConn[player]; ok {
+		err := c.sendMsg(msg)
+		if err != nil {
+			h.removeClient(&model.PlayerConnection{
+				Name: player,
+				Conn: c.Conn,
+			})
+		}
+	} else {
+		log.Printf("did not find any player in hub '%s' with name '%s'\n", h.hubID, player)
+	}
+}
+
+func (c *Client) sendMsg(msg string) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	err := c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	err = c.Conn.WriteJSON(model.Message{Text: msg})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (h *Hub) GetBroadcastChan() <-chan model.Message {
+	return h.broadcastChan
+}
+func (h *Hub) BroadcastMsg(msg string) {
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+	for _, client := range h.clientsConn {
+		client := client
+		go func(c *Client) {
+			err := c.sendMsg(msg)
+			if err != nil {
+				log.Printf("error occurred while broadcasting message to IP '%s' , errorMsg: %s \n", c.Conn.RemoteAddr().String(), err.Error())
+			}
+		}(&client)
+
+	}
 }
 
 // validateHubAndPlayerName validates parametes playerName and hub ID
