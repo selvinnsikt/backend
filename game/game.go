@@ -49,17 +49,33 @@ func (g *Game) handleDataFromHub(msg model.Message) {
 
 	// find the correct struct
 	switch t {
-	case "AnswerFromPlayer":
-		var a model.AnswerFromPlayer
+	case "ReadyToPlay":
+		var a model.ReadyToPlay
 		err = json.Unmarshal(d, &a)
 		if err != nil {
 			g.Hub.SendMsgToClient(fmt.Sprintf("unable to parse json-object '%s' to type '%s'", string(d), t), msg.Player)
 			return
 		}
+		b, err := json.Marshal(&a)
+		if err != nil {
+			g.Hub.SendMsgToClient(fmt.Sprintf("unable to marshal json-object '%s' to type '%s'", string(d), t), msg.Player)
+			return
+		}
+		g.Hub.SendMsgToClient(string(b), msg.Player)
 
-		g.Hub.SendMsgToClient(a.Votes[0], msg.Player)
-		//TODO: do something with the parsed message
+		/* Handling of VotesToQuestions
 
+			vtq := model.VotesToQuestions{
+				PayloadType: model.PayloadType{Type: "VotesToQuestions"},
+				VotesToQuestions: []model.VotesToQuestion{{
+					Questions: 1,
+					Votes:     make(map[string]int),
+				}},
+			}
+
+			vtq.VotesToQuestions[0].Votes["aksel"] = 2
+			vtq.VotesToQuestions[0].Votes["alf"] = 10
+		 */
 	default:
 		g.Hub.SendMsgToClient(fmt.Sprintf("'%s' is not of a valid message type", t), msg.Player)
 		return
@@ -70,7 +86,7 @@ func (g *Game) handleDataFromHub(msg model.Message) {
 // find what type of payload and the index the actual payload starts at
 func getPayloadType(data []byte) (string, int, error) {
 	var t string
-	var p model.Payload
+	var p model.PayloadType
 
 	// loop until the first comma (where the payloadtype in json-object ends)
 	for i, d := range data {
@@ -82,12 +98,12 @@ func getPayloadType(data []byte) (string, int, error) {
 			if err != nil {
 				return "", 0, err
 			}
-			if p.PayloadType == "" {
+			if p.Type == "" {
 				return "", 0, fmt.Errorf("invalid json format")
 			}
 			// return if everything went fine
 			i++
-			return p.PayloadType, i, nil
+			return p.Type, i, nil
 		}
 		t += string(d)
 	}

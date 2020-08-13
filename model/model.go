@@ -17,15 +17,35 @@ type Message struct {
 	Player string `json:"player,omitempty"` // name of player who sent the message
 	Text   string `json:"text"`
 }
-// Example json-object: {"payloadtype":"AnswerFromPlayer","question":1,"votes":["aksel","alf"]}
-type Payload struct {
-	PayloadType string `json:"payloadtype"`
+type ReadyToPlay struct {
+	Ready bool `json:"ready"`
 }
 
-type AnswerFromPlayer struct {
-	// Which question number 1-4
-	Question int `json:"question"`
-	// Votes of players choosen on that question
-	// Example: {"Aksel","Alf"]    OR    {"Aksel","Aksel"}
-	Votes []string `json:"votes"`
+// Example json-object: {"payloadtype":"AnswerFromPlayer","question":1,"votes":["aksel","alf"]}
+type PayloadType struct {
+	Type string `json:"payloadtype"`
+}
+
+type VotesToQuestion struct {
+	Question int              `json:"question"`
+	Votes     map[string]int `json:"votes"`
+}
+
+/* EXAMPLE JSON-obj
+{
+	"payloadtype": "VotesToQuestions",
+	"votesToQuestions": [
+		{
+				"question": 1,
+				"votes": {
+						"aksel": 2,
+						"alf": 10
+				}
+			}
+		]
+}
+*/
+type VotesToQuestions struct {
+	PayloadType
+	VotesToQuestions []VotesToQuestion `json:"votesToQuestions"`
 }

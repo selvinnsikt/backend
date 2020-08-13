@@ -18,9 +18,11 @@ func main() {
 
 	log.Println("starting up server")
 	log.Fatal(server())
+
 }
 
 func server() error {
+
 	r := mux.NewRouter()
 
 	r.HandleFunc("/join/{hub}/{player}", controller.JoinRoomHandler)
