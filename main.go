@@ -14,9 +14,6 @@ func main() {
 	// Randomness
 	rand.Seed(time.Now().UnixNano())
 
-	//grs := gameRoom.NewGameRoom()
-	//grs.Create("Aksel")
-
 	hub.InitHubs()
 
 	log.Println("starting up server")
