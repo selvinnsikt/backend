@@ -1,9 +1,9 @@
 package main
 
 import (
-	"./controller"
-	"./hub"
 	"github.com/gorilla/mux"
+	"github.com/selvinnsikt/backend/controller"
+	"github.com/selvinnsikt/backend/hub"
 	"log"
 	"math/rand"
 	"net/http"

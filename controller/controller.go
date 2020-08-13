@@ -1,12 +1,12 @@
 package controller
 
 import (
-	"../game"
-	"../hub"
-	"../model"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"github.com/selvinnsikt/backend/game"
+	"github.com/selvinnsikt/backend/hub"
+	"github.com/selvinnsikt/backend/model"
 	"net/http"
 )
 

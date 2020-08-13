@@ -1,4 +1,20 @@
 # Explanation
+## Run server with Docker
+Build image:
+```
+docker build -t selvinnsikt:**INSERT TAG** .
+```
+Run image:
+```
+docker run -p 8080:8080 selvinnsikt:v1 
+```
+Test if image is running:<br>
+```
+GET localhost:8080/create
+```
+Will respond with JSON-obj. Image will also log some information.
+
+## Sequence diagrams
 Website used for sequence diagrams: https://sequencediagram.org/
 
 ## Creating hub

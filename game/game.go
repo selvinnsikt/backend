@@ -1,10 +1,10 @@
 package game
 
 import (
-	"../hub"
-	"../model"
 	"encoding/json"
 	"fmt"
+	"github.com/selvinnsikt/backend/hub"
+	"github.com/selvinnsikt/backend/model"
 	"log"
 )
 
@@ -65,17 +65,17 @@ func (g *Game) handleDataFromHub(msg model.Message) {
 
 		/* Handling of VotesToQuestions
 
-			vtq := model.VotesToQuestions{
-				PayloadType: model.PayloadType{Type: "VotesToQuestions"},
-				VotesToQuestions: []model.VotesToQuestion{{
-					Questions: 1,
-					Votes:     make(map[string]int),
-				}},
-			}
+		vtq := model.VotesToQuestions{
+			PayloadType: model.PayloadType{Type: "VotesToQuestions"},
+			VotesToQuestions: []model.VotesToQuestion{{
+				Questions: 1,
+				Votes:     make(map[string]int),
+			}},
+		}
 
-			vtq.VotesToQuestions[0].Votes["aksel"] = 2
-			vtq.VotesToQuestions[0].Votes["alf"] = 10
-		 */
+		vtq.VotesToQuestions[0].Votes["aksel"] = 2
+		vtq.VotesToQuestions[0].Votes["alf"] = 10
+		*/
 	default:
 		g.Hub.SendMsgToClient(fmt.Sprintf("'%s' is not of a valid message type", t), msg.Player)
 		return

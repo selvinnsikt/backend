@@ -1,9 +1,9 @@
 package hub
 
 import (
-	"../model"
 	"fmt"
 	"github.com/gorilla/websocket"
+	"github.com/selvinnsikt/backend/model"
 	"log"
 	"math/rand"
 	"strconv"
