@@ -14,11 +14,11 @@ import (
 type GameHub interface {
 	AddClientToHub(pc model.PlayerConnection)
 	// Broadcast a message to all client connceted to the hub
-	BroadcastMsg(msg string) error
+	BroadcastMsg(msg interface{}) error
 	// Listen to all messages coming to the hub
 	GetBroadcastChan() chan model.Message
 	// sends a message to the client
-	SendMsgToClient(msg, player string) error
+	SendMsgToClient(msg interface{}, player string) error
 }
 
 var hubs *Hubs
@@ -118,9 +118,9 @@ func (h *Hub) AddClientToHub(pc model.PlayerConnection) {
 
 // readMessageFromClient reads incoming messages and sent it to incomingMsgChan
 func (h *Hub) readMessageFromClient(pc *model.PlayerConnection) {
+	var m model.Message
 	for {
-		var m model.Message
-		err := pc.Conn.ReadJSON(&m)
+		_, msg, err := pc.Conn.ReadMessage()
 		if err != nil {
 			log.Println("Error: " + err.Error())
 			h.removeClient(pc)
@@ -128,10 +128,11 @@ func (h *Hub) readMessageFromClient(pc *model.PlayerConnection) {
 		}
 		// add name of client who sent the message
 		m.Player = pc.Name
+		m.Text = string(msg)
 		h.broadcastChan <- m
 	}
 }
-func (h *Hub) SendMsgToClient(msg, player string) {
+func (h *Hub) SendMsgToClient(msg interface{}, player string) {
 	if c, ok := h.clientsConn[player]; ok {
 		err := c.sendMsg(msg)
 		if err != nil {
@@ -145,7 +146,7 @@ func (h *Hub) SendMsgToClient(msg, player string) {
 	}
 }
 
-func (c *Client) sendMsg(msg string) error {
+func (c *Client) sendMsg(msg interface{}) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	err := c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
@@ -153,7 +154,7 @@ func (c *Client) sendMsg(msg string) error {
 		log.Println(err)
 		return err
 	}
-	err = c.Conn.WriteJSON(model.Message{Text: msg})
+	err = c.Conn.WriteJSON(msg)
 	if err != nil {
 		return err
 	}
@@ -163,7 +164,7 @@ func (c *Client) sendMsg(msg string) error {
 func (h *Hub) GetBroadcastChan() <-chan model.Message {
 	return h.broadcastChan
 }
-func (h *Hub) BroadcastMsg(msg string) {
+func (h *Hub) BroadcastMsg(msg interface{}) {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
 	for _, client := range h.clientsConn {

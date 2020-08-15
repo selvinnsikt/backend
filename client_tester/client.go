@@ -37,15 +37,14 @@ func main() {
 	}
 
 	// receive
-	var m Message
 	go func() {
 		for {
-			err := conn.ReadJSON(&m)
+			_, msg, err := conn.ReadMessage()
 			if err != nil {
 				fmt.Println("Error receiving message: ", err.Error())
 				break
 			}
-			fmt.Println("Message: ", m)
+			fmt.Println("Message: ", string(msg))
 		}
 	}()
 
@@ -56,10 +55,7 @@ func main() {
 		if text == "" {
 			continue
 		}
-		m := Message{
-			Text: text,
-		}
-		err := conn.WriteJSON(&m)
+		err := conn.WriteMessage(1, []byte(text))
 		if err != nil {
 			fmt.Println("Error sending message: ", err.Error())
 			break

@@ -18,17 +18,18 @@ type Message struct {
 	Text   string `json:"text"`
 }
 type ReadyToPlay struct {
-	Ready bool `json:"ready"`
+	PayloadType
+	Ready  bool   `json:"ready"`
+	Player string `json:"player,omitempty"`
 }
 
-// Example json-object: {"payloadtype":"AnswerFromPlayer","question":1,"votes":["aksel","alf"]}
 type PayloadType struct {
-	Type string `json:"payloadtype"`
+	Type string `json:"payloadtype,omitempty"`
 }
 
 type VotesToQuestion struct {
-	Question int              `json:"question"`
-	Votes     map[string]int `json:"votes"`
+	Question int            `json:"question"`
+	Votes    map[string]int `json:"votes"`
 }
 
 /* EXAMPLE JSON-obj

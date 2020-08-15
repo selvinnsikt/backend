@@ -6,13 +6,13 @@ docker build -t selvinnsikt:**INSERT TAG** .
 ```
 Run image:
 ```
-docker run -p 8080:8080 selvinnsikt:v1 
+docker run -p 8080:8080 selvinnsikt:**INSERT TAG**
 ```
 Test if image is running:<br>
 ```
-GET localhost:8080/create
+curl localhost:8080/create
 ```
-Will respond with JSON-obj. Image will also log some information.
+Will respond with JSON-obj. Container will also log some information.
 
 ## Sequence diagrams
 Website used for sequence diagrams: https://sequencediagram.org/
@@ -56,7 +56,7 @@ opt player can press not ready button
 client -> game.go: {"payloadtype":"ReadyToPlay" , "ready":"false"}
 end
 
-game.go ->client: {"payloadtype":"ReadyToPlay" , "ready":"true"}
+game.go ->client: {"payloadtype":"ReadyToPlay" , "ready":"true","player":"aksel"}
 
 end
 

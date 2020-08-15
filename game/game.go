@@ -13,6 +13,10 @@ import (
 
 var game *Game
 
+const (
+	READY_TO_PLAY = "ReadyToPlay"
+)
+
 type Game struct {
 	*hub.Hub
 }
@@ -49,19 +53,22 @@ func (g *Game) handleDataFromHub(msg model.Message) {
 
 	// find the correct struct
 	switch t {
-	case "ReadyToPlay":
-		var a model.ReadyToPlay
-		err = json.Unmarshal(d, &a)
+	case READY_TO_PLAY:
+		// Parse the raw bytes to the correct struct
+		var m model.ReadyToPlay
+		err = json.Unmarshal(d, &m)
 		if err != nil {
-			g.Hub.SendMsgToClient(fmt.Sprintf("unable to parse json-object '%s' to type '%s'", string(d), t), msg.Player)
+			g.Hub.SendMsgToClient(fmt.Sprintf("unable to parse json-object '%s' to type '%s' ; error: %s", string(d), t, err.Error()), msg.Player)
 			return
 		}
-		b, err := json.Marshal(&a)
-		if err != nil {
-			g.Hub.SendMsgToClient(fmt.Sprintf("unable to marshal json-object '%s' to type '%s'", string(d), t), msg.Player)
-			return
-		}
-		g.Hub.SendMsgToClient(string(b), msg.Player)
+		// Add type to the message
+		m.Type = READY_TO_PLAY
+
+		// Add playername to the message
+		m.Player = msg.Player
+
+		// Broadcast to other players that the player is ready or not ready
+		g.Hub.BroadcastMsg(m)
 
 		/* Handling of VotesToQuestions
 
@@ -78,7 +85,6 @@ func (g *Game) handleDataFromHub(msg model.Message) {
 		*/
 	default:
 		g.Hub.SendMsgToClient(fmt.Sprintf("'%s' is not of a valid message type", t), msg.Player)
-		return
 	}
 
 }
