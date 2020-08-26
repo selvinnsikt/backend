@@ -19,6 +19,8 @@ type GameHub interface {
 	GetBroadcastChan() chan model.Message
 	// sends a message to the client
 	SendMsgToClient(msg interface{}, player string) error
+	// Get number of clients connected to the hub
+	GetNumberOfClientsConnected() int
 }
 
 var hubs *Hubs
@@ -88,6 +90,8 @@ func (h *Hub) run() {
 }
 
 func (h *Hub) removeClient(np *model.PlayerConnection) {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
 	defer np.Conn.Close()
 	log.Printf("deleting '%s from hub '%s' with IP '%s'\n", np.Name, h.hubID, np.Conn.RemoteAddr().String())
 	delete(h.clientsConn, np.Name)
@@ -95,12 +99,16 @@ func (h *Hub) removeClient(np *model.PlayerConnection) {
 }
 func (h *Hub) addClient(np *model.PlayerConnection) {
 	// Add client to Game Room
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
 	log.Printf("adding '%s to hub '%s' with IP '%s' \n", np.Name, h.hubID, np.Conn.RemoteAddr().String())
 	h.clientsConn[np.Name] = Client{
 		Conn:  np.Conn,
 		mutex: new(sync.RWMutex),
 	}
 	h.numberClientsConnected++
+	// Send to player that the connection was successful
+	h.SendMsgToClient(model.ConnSuccess{PayloadType: model.PayloadType{Type: "ConnectionSuccess"}},np.Name)
 }
 
 // addClientToHub adds the player to the given hub ID
@@ -122,7 +130,10 @@ func (h *Hub) readMessageFromClient(pc *model.PlayerConnection) {
 	for {
 		_, msg, err := pc.Conn.ReadMessage()
 		if err != nil {
-			log.Println("Error: " + err.Error())
+			// not the best, should find error msg from websocket package
+			if err.Error() != "websocket: close 1000 (normal)" {
+				log.Println("ERROR - bad read from client connection - " + err.Error())
+			}
 			h.removeClient(pc)
 			return
 		}
@@ -132,20 +143,24 @@ func (h *Hub) readMessageFromClient(pc *model.PlayerConnection) {
 		h.broadcastChan <- m
 	}
 }
+
+// SendMsgToClient is a implementation from the GameHub interface and
+// is used by game.go
 func (h *Hub) SendMsgToClient(msg interface{}, player string) {
 	if c, ok := h.clientsConn[player]; ok {
 		err := c.sendMsg(msg)
 		if err != nil {
-			h.removeClient(&model.PlayerConnection{
+			h.removeClientChan <- &model.PlayerConnection{
 				Name: player,
 				Conn: c.Conn,
-			})
+			}
 		}
 	} else {
 		log.Printf("did not find any player in hub '%s' with name '%s'\n", h.hubID, player)
 	}
 }
 
+// sendMsg is a thread-safe way to send message to client
 func (c *Client) sendMsg(msg interface{}) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
@@ -164,17 +179,28 @@ func (c *Client) sendMsg(msg interface{}) error {
 func (h *Hub) GetBroadcastChan() <-chan model.Message {
 	return h.broadcastChan
 }
+
+func (h *Hub) GetNumberOfClientsConnected() int {
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+	return h.numberClientsConnected
+}
 func (h *Hub) BroadcastMsg(msg interface{}) {
 	h.mutex.RLock()
 	defer h.mutex.RUnlock()
-	for _, client := range h.clientsConn {
+	for name, client := range h.clientsConn {
 		client := client
-		go func(c *Client) {
+		name := name
+		go func(c *Client, n string) {
 			err := c.sendMsg(msg)
 			if err != nil {
 				log.Printf("error occurred while broadcasting message to IP '%s' , errorMsg: %s \n", c.Conn.RemoteAddr().String(), err.Error())
+				h.removeClientChan <- &model.PlayerConnection{
+					Name: n,
+					Conn: c.Conn,
+				}
 			}
-		}(&client)
+		}(&client, name)
 
 	}
 }

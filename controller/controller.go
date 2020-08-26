@@ -19,7 +19,7 @@ func CreateHubHandler(w http.ResponseWriter, r *http.Request) {
 	go game.InitGame(h)
 
 	// Return response to client with Hub ID
-	json.NewEncoder(w).Encode(map[string]string{"Hub": hubID})
+	json.NewEncoder(w).Encode(model.HubID{Hub: hubID})
 }
 
 var upgrader = websocket.Upgrader{}
@@ -53,6 +53,7 @@ func JoinRoomHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	h.AddClientToHub(model.PlayerConnection{
 		Name: np.Name,
 		Conn: conn,

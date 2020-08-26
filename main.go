@@ -11,6 +11,9 @@ import (
 )
 
 func main() {
+	run()
+}
+func run(){
 	// Randomness
 	rand.Seed(time.Now().UnixNano())
 
@@ -18,7 +21,6 @@ func main() {
 
 	log.Println("starting up server")
 	log.Fatal(server())
-
 }
 
 func server() error {

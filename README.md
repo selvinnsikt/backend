@@ -68,24 +68,25 @@ game.go ->client: {"payloadtype":"FourQuestions" , "questions": [ ] }
 group loop until questionNumber > 4
 group loop until players have answered one question
 
-client -> game.go: {"payloadtype":"AnswerToQuestion" , "players": ["aksel","alf" ] }
+client -> game.go: {"payloadtype":"PlayersVoteToQuestion" ,"questionNumber": 1 ,  "players": ["alf","alf" ] }
 
 game.go ->game.go: addVoteToQuestion()
-game.go ->client:  {"payloadtype":"ReceivedAnswerToQuestion" , "questionNumber": 1 , "player": "aksel"}
+game.go ->client:  {"payloadtype":"PlayersVoteToQuestionReceived" , "questionNumber": 1 , "player": "aksel"}
 end
-game.go ->client:  {"payloadtype":"NextQuestion" , "nextQuestionNumber": 2}
+
 end
 end
 
-game.go -> client:{"payloadtype":"VotesToQuestions" , "votesToQuestions": [ "question: 1, votes: { "aksel": 2, "alf" : 3 } ] }
+game.go -> client:{"payloadtype":"PlayersVoteToQuestionDone"}
 
 group until questionNumber > 4
 group until all players have voted on SelfVoteOnQuestion
-client->game.go: {"payloadtype":"SelfVoteOnQuestion" , "question": 1, "decision":"mostVotes"}
+client->game.go: {"payloadtype":"SelfVoteOnQuestion" , "questionNumber": 1, "decision":"mostVotes"}
 note right of client: On 'SelfVoteOnQuestion' players can choose vote either 'mostVotes, leastVotes, neutral'
-game.go ->client: {"payloadtype":"SelfVoteOnQuestion" , "question": 1, "player":"aksel"}
+game.go ->client: {"payloadtype":"SelfVoteOnQuestion" , "questionNumber": 1, "player":"aksel"}
 end
-game.go ->client: {"payloadtype":"SelfVoteOnQuestionDone" , "question": 1, "players": {"aksel":"mostVotes", "alf":"leastVotes" } }
-end 
+game.go ->client: {"payloadtype":"SelfVoteOnQuestionDone" , "questionNumber": 1, "players": {"aksel": 3, "alf": 0}
+} }
+end
 
 ```
