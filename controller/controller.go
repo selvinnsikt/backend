@@ -12,6 +12,10 @@ import (
 
 // CreateRoom creates a new game room
 func CreateHubHandler(w http.ResponseWriter, r *http.Request) {
+	// Cors
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 	// Creating a hub
 	h, hubID := hub.NewHub()
 

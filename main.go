@@ -28,7 +28,7 @@ func server() error {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/join/{hub}/{player}", controller.JoinRoomHandler)
-	r.HandleFunc("/create", controller.CreateHubHandler)
+	r.HandleFunc("/create", controller.CreateHubHandler).Methods("GET", "OPTIONS")
 
 	return http.ListenAndServe(":8080", r)
 }
