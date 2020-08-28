@@ -1,51 +1,56 @@
 # Explanation
+
 ## Run server with Docker
+
 Build image:
-```
-docker build -t selvinnsikt:**INSERT TAG** .
-```
+
+    docker build -t selvinnsikt:**INSERT TAG** .
+
 Run image:
-```
-docker run -p 8080:8080 selvinnsikt:**INSERT TAG**
-```
+
+    docker run -p 8080:8080 selvinnsikt:**INSERT TAG**
+
 Test if image is running:<br>
-```
-curl localhost:8080/create
-```
+
+    curl localhost:8080/create
+
 Will respond with JSON-obj. Container will also log some information.
 
 ## Sequence diagrams
-Website used for sequence diagrams: https://sequencediagram.org/
+
+Website used for sequence diagrams: <https://sequencediagram.org/>
 
 ## Creating hub
-![alt text](sequence_diagram_images/create_game.png)
+
+![alt text](https://user-images.githubusercontent.com/20001253/91325122-1bd7fc00-e7c3-11ea-8a59-7c8e4af22d4f.png)
 
 Sequence diagram code: <br>
-```
-title creating hub/game
-client -> controller.go : GET /create
-controller.go -> hub.go: hub.NewHub()
-controller.go <-hub.go:return hub, hudID
-controller.go -> game.go: game.InitGame(h)
-game.go ->game.go: game.readHubMessages()
-controller.go ->client: response: {"Hub":"hubID"}
-```
+
+    title creating hub/game
+    client -> controller.go : GET /create
+    controller.go -> hub.go: hub.NewHub()
+    controller.go <-hub.go:return hub, hudID
+    controller.go -> game.go: game.InitGame(h)
+    game.go ->game.go: game.readHubMessages()
+    controller.go ->client: response: {"Hub":"hubID"}
 
 ## Joining hub
-![alt text](sequence_diagram_images/join_game.png)
+
+![alt text](https://user-images.githubusercontent.com/20001253/91325126-1c709280-e7c3-11ea-88a6-7fdd86bb732a.png)
 Sequence diagram code: <br>
-```
-title joining hub/game
-client -> controller.go : GET /join/{hubID}/{playerName}
-controller.go -> hub.go: ValidateHubAndPlayerName(model.NewPlayer)
-hub.go ->controller.go: return (*Hub, err)
-controller.go ->client: upgrade connection to websocket
-controller.go -> hub.go: hub.AddClientToHub(model.PlayerConnection)
-```
+
+    title joining hub/game
+    client -> controller.go : GET /join/{hubID}/{playerName}
+    controller.go -> hub.go: ValidateHubAndPlayerName(model.NewPlayer)
+    hub.go ->controller.go: return (*Hub, err)
+    controller.go ->client: upgrade connection to websocket
+    controller.go -> hub.go: hub.AddClientToHub(model.PlayerConnection)
 
 ## Playing the game
-![alt text](sequence_diagram_images/playing_game.png)
+
+![alt text](https://user-images.githubusercontent.com/20001253/91325130-1d092900-e7c3-11ea-8dfc-3cebc22692f0.png)
 Sequence diagram code: <br>
+
 ```
 title the game  (packets are sent over websocket conn)
 
