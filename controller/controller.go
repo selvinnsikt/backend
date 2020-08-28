@@ -51,6 +51,11 @@ func JoinRoomHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Super shady origin check. Look under Origin Considerations here:
+	// https://godoc.org/github.com/gorilla/websocket for documentation on
+	// how to write a better one
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+
 	// Upgrades connection from HTTP to WebSocket
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
